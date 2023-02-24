@@ -1,0 +1,22 @@
+version: '3.1'
+
+services:
+  db:
+    image: postgres
+    ports: 
+      - 5432:5432
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: 1234
+      POSTGRES_DB: users
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 3s
+      timeout: 1s
+      retries: 20
+    networks: 
+      - rocket-api-network
+
+networks:
+  rocket-api-network:
+    driver: bridge
