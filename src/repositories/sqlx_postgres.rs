@@ -3,22 +3,19 @@ use crate::models::user::User;
 
 #[derive(Debug, Clone)]
 pub struct SqlxHelper {
-    pool: PgPool
+    pub pool: PgPool
 }
 
 impl SqlxHelper {
-    pub async fn new(db_url: &str) -> Self {
-        let db_pool = match PgPoolOptions::new()
+    pub async fn new(db_url: &str) -> Result<Self, sqlx::Error> {
+        let db_pool = PgPoolOptions::new()
             .max_connections(10)
-            .connect(db_url).await {
-                Ok(pool) => pool,
-                Err(e) => panic!("could not connect to database: {:?}", e)
-            };
+            .connect(db_url).await?;
 
-        SqlxHelper { pool: db_pool }
+        Ok(SqlxHelper { pool: db_pool })
     }
 
-    pub async fn get_users(self) -> Result<Vec<User>, sqlx::Error> {
+    pub async fn get_users(&self) -> Result<Vec<User>, sqlx::Error> {
         match sqlx::query("SELECT * FROM users")
         .map(|row: PgRow| User {
             name: row.get("name"),
@@ -31,7 +28,7 @@ impl SqlxHelper {
         }
     }
 
-    pub async fn insert_user(self, user: User) -> Result<User,  sqlx::Error> {
+    pub async fn insert_user(&self, user: User) -> Result<User,  sqlx::Error> {
         match sqlx::query("INSERT INTO users (name, age, email, password) VALUES($1, $2, $3, $4) RETURNING name, age, email, password")
             .bind(user.name)
             .bind(user.age)

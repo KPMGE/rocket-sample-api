@@ -1,14 +1,12 @@
-use rocket::serde::json::Json;
+use rocket::{serde::json::Json, form::Form};
 use crate::{
     models::user::User, 
     repositories::sqlx_postgres::SqlxHelper
 };
 
 #[get("/users")]
-pub async fn get_users() -> Json<Vec<User>> {
-    // should move this connection to a single place
-    let sqlx_helper = SqlxHelper::new("postgres://postgres:1234@localhost:5432/users").await;
-    let users = match sqlx_helper.get_users().await {
+pub async fn get_users(helper: &rocket::State<SqlxHelper>) -> Json<Vec<User>> {
+    let users = match helper.inner().get_users().await {
         Ok(users) => users,
         Err(e) => panic!("{e}")
     };
@@ -16,17 +14,9 @@ pub async fn get_users() -> Json<Vec<User>> {
     Json(users)
 }
 
-#[post("/user")]
-pub async fn insert_user() -> Json<User> {
-    // should move this connection to a single place
-    let sqlx_helper = SqlxHelper::new("postgres://postgres:1234@localhost:5432/users").await;
-
-    let user = match sqlx_helper.insert_user(User {
-        name: "test user".to_string(),
-        password: "test password".to_string(), 
-        email: "test email".to_string(),
-        age: 21
-    }).await {
+#[post("/users", data = "<new_user>")]
+pub async fn insert_user(helper: &rocket::State<SqlxHelper>, new_user: Json<User>) -> Json<User> {
+    let user = match helper.inner().insert_user(new_user.into_inner()).await {
         Ok(user) => user,
         Err(e) => panic!("{e}")
     };
