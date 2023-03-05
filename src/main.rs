@@ -19,6 +19,9 @@ async fn rocket() -> _ {
     let db_url = "postgres://postgres:1234@localhost:5432/users";
     let helper = SqlxHelper::new(db_url).await.expect("could not connect to the database");
 
+    sqlx::migrate!("./migrations").run(&helper.pool).await.expect("could not run migrations!");
+    println!("migrations ran successfully...");
+
     println!("database connected successfully...");
     rocket::build()
         .manage::<SqlxHelper>(helper)
